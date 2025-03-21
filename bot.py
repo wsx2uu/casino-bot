@@ -1,17 +1,22 @@
 import asyncio
 import logging
+import os
 from aiogram import Bot, Dispatcher, types, Router
 from aiogram.filters import Command
 import aiohttp
+from dotenv import load_dotenv
 
-# 🔹 ЗАМЕНИ на свой токен!
-TOKEN = "7866480501:AAEAqEtSoVfM-xj_y9-oT-_MNCsq-rmQeLQ"
+# Загружаем переменные окружения
+load_dotenv()
 
-# 🔹 Укажи URL своего бекенда (локально или на сервере)
-BALANCE_API = "http://localhost:8000/balance/"  # Или укажи реальный хостинг
+# Получаем данные из .env
+TOKEN = os.getenv("BOT_TOKEN")
+BALANCE_API = os.getenv("BALANCE_API", "http://localhost:8000/balance/")
+CASINO_URL = os.getenv("CASINO_URL", "https://casino-webapp-1vc0j34xk-wsxs-projects-76072096.vercel.app")
 
-# 🔹 Ссылка на казино-мини-приложение
-CASINO_URL = "https://casino-webapp-1vc0j34xk-wsxs-projects-76072096.vercel.app"
+# Проверяем, заданы ли переменные
+if not TOKEN:
+    raise ValueError("❌ Ошибка: Токен бота не задан! Укажи его в .env файле.")
 
 # 🔹 Настраиваем логирование
 logging.basicConfig(level=logging.INFO)
@@ -28,16 +33,15 @@ async def start(message: types.Message):
     text = (
         "🎰 Добро пожаловать в Казино!\n\n"
         "💰 Проверь свой баланс: /balance\n"
-        "🎮 Играть в казино: [НАЖМИ СЮДА]({})"
-    ).format(CASINO_URL)
-    
+        f"🎮 Играть в казино: [НАЖМИ СЮДА]({CASINO_URL})"
+    )
     await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True)
 
 # 🔹 Команда /balance
 @router.message(Command("balance"))
 async def get_balance(message: types.Message):
     user_id = message.from_user.id
-    
+
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{BALANCE_API}{user_id}") as response:
             if response.status == 200:
